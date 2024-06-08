@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estatísticas de Acesso</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background-color: #e0f7ff; /* Azul suave */
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #0056b3; /* Cor azul escura */
+        }
+
+        .chart-container {
+            width: 80%;
+            margin: auto;
+            padding-top: 20px;
+        }
+
+        .spinner {
+            display: none;
+            text-align: center;
+        }
+
+        .menu-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .welcome-container {
+            text-align: center;
+            margin-bottom: 40px;
+            background-color: #ffffff; /* Fundo branco para contraste */
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .welcome-container p {
+            margin: 10px 0;
+            color: #0056b3; /* Cor azul escura */
+        }
+
+        .welcome-container strong {
+            color: #007bff; /* Cor azul dos botões */
+        }
+
+        button {
+            background-color: #007bff;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button.clicked {
+            background-color: #0056b3; /* Cor mais escura quando clicado */
+        }
+
+        #menu {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .chart-container {
+            display: none;
+        }
+
+        .main-content {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+    <!-- Adiciona Chart.js e o adaptador de datas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+
+<body>
+    <h1>Estatísticas de Acesso</h1>
+    <div id="menu">
+        <button id="btnRegistros" onclick="window.location.href='tabela.html'">Registros de Acesso</button>
+        <div class="menu-buttons">
+            <button id="btnAcessos">Gráfico de Acessos</button>
+            <button id="btnStatus">Gráfico de Status</button>
+        </div>
+    </div>
+    <div class="welcome-container" id="welcomeContainer">
+        <h2>Bem-vindo(a)!</h2>
+        <p><strong>Estamos felizes por você estar aqui!</strong></p>
+        <p>Sinta-se à vontade para explorar nosso sistema. Estamos disponíveis para ajudá-lo(a) em sua jornada.</p>
+    </div>
+    <div class="spinner">Carregando...</div>
+    <div class="main-content">
+        <div class="chart-container" id="chartAcessosContainer">
+            <canvas id="chartAcessos"></canvas>
+        </div>
+        <div class="chart-container" id="chartStatusContainer">
+            <canvas id="chartStatus"></canvas>
+        </div>
+    </div>
+
+    <!-- Inclua o arquivo de configuração -->
+    <script src="config.js"></script>
+    <!-- Seu script principal -->
+    <script>
+        function showChart(chartId) {
+            document.getElementById('welcomeContainer').style.display = 'none';
+            var chartAcessosContainer = document.getElementById('chartAcessosContainer');
+            var chartStatusContainer = document.getElementById('chartStatusContainer');
+
+            if (chartId === 'chartAcessosContainer') {
+                chartAcessosContainer.style.display = 'block';
+                chartStatusContainer.style.display = 'none';
+            } else if (chartId === 'chartStatusContainer') {
+                chartAcessosContainer.style.display = 'none';
+                chartStatusContainer.style.display = 'block';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const spinner = document.querySelector('.spinner');
+            const btnAcessos = document.getElementById('btnAcessos');
+            const btnStatus = document.getElementById('btnStatus');
+            const btnRegistros = document.getElementById('btnRegistros');
+
+            const buttons = [btnAcessos, btnStatus, btnRegistros];
+
+            // Função para remover a classe 'clicked' de todos os botões
+            function removeClickedClass() {
+                buttons.forEach(button => {
+                    button.classList.remove('clicked');
+                });
+            }
+
+            // Adiciona listeners de clique para cada botão
+            btnAcessos.addEventListener('click', () => {
+                showChart('chartAcessosContainer');
+                removeClickedClass();
+                btnAcessos.classList.add('clicked');
+            });
+
+            btnStatus.addEventListener('click', () => {
+                showChart('chartStatusContainer');
+                removeClickedClass();
+                btnStatus.classList.add('clicked');
+            });
+
+            btnRegistros.addEventListener('click', () => {
+                // Adicione a lógica para quando o botão de registros for clicado
+                removeClickedClass();
+                btnRegistros.classList.add('clicked');
+            });
+
+            spinner.style.display = 'block';
+
+            fetch(CONFIG.API_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro na resposta da rede');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Dados recebidos:', data); // Verifica os dados recebidos
+                    spinner.style.display = 'none';
+
+                    if (!Array.isArray(data) || data.length === 0) {
+                        throw new Error('Dados inválidos ou vazios');
+                    }
+
+                    const horarios = data.map(registro => registro.horario);
+                    const statusAcesso = data.map(registro => registro.status_acesso);
+
+                    // Gráfico de Acessos por Horário
+                    const ctxAcessos = document.getElementById('chartAcessos').getContext('2d');
+                    new Chart(ctxAcessos, {
+                        type: 'line',
+                        data: {
+                            labels: horarios,
+                            datasets: [{
+                                label: 'Acessos por Horário',
+                                data: horarios.map(() => 1), // Um acesso por horário
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderWidth: 1,
+                                fill: true,
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                x: {
+                                    type: 'time',
+                                    time: {
+                                        unit: 'hour'
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Contagem de status de acesso
+                    const statusCounts = statusAcesso.reduce((acc, status) => {
+                        acc[status] = (acc[status] || 0) + 1;
+                        return acc;
+                    }, {});
+
+                    // Gráfico de Status de Acesso
+                    const ctxStatus = document.getElementById('chartStatus').getContext('2d');
+                    new Chart(ctxStatus, {
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(statusCounts),
+                            datasets: [{
+                                label: 'Status de Acesso',
+                                data: Object.values(statusCounts),
+                                backgroundColor: [
+                                    'rgba(75, 192, 192, 0.2)',
+                                    'rgba(255, 99, 132, 0.2)',
+                                    'rgba(54, 162, 235, 0.2)',
+                                    'rgba(255, 206, 86, 0.2)',
+                                    'rgba(153, 102, 255, 0.2)',
+                                    'rgba(255, 159, 64, 0.2)'
+                                ],
+                                borderColor: [
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(153, 102, 255, 1)',
+                                    'rgba(255, 159, 64, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    spinner.style.display = 'none';
+                    console.error('Erro ao buscar os dados:', error);
+                    alert('Erro ao carregar os dados: ' + error.message);
+                });
+        });
+    </script>
+</body>
+
+</html>

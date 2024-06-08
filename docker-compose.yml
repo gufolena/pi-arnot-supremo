@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./PI-BACK-END
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./PI-BACK-END:/app
+      - ./PI-BACK-END/database.db:/app/database.db
+
+  frontend:
+    build:
+      context: ./PI-FRONT-END
+    ports:
+      - "80:80"
+    depends_on:
+      - backend

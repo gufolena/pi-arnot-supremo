@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  flask-app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=0
+    volumes:
+      - .:/app  # Maps the current directory to /app inside the container
+      - ./database.db:/app/database.db  # Ensures database.db is in the project root

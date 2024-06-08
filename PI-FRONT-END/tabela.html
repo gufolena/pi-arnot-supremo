@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registros e Estatísticas de Acesso</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #e0f7ff; /* Azul suave */
+        }
+    
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #0056b3; /* Cor azul escura */
+        }
+    
+        #menu {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+    
+        #menu button {
+            background-color: #007bff;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 12px;
+            transition: background-color 0.3s ease;
+        }
+    
+        #menu button:hover {
+            background-color: #0056b3;
+        }
+    
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #e0f7ff; /* Azul suave */
+        }
+    
+        th,
+        td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+            background-color: #ffffff; /* Cor branca */
+        }
+    
+        th {
+            background-color: #f2f2f2; /* Cor cinza claro */
+        }
+    
+        tr:nth-child(even) {
+            background-color: #ffffff; /* Cor branca */
+        }
+    </style>
+    
+    <!-- Adiciona Chart.js e o adaptador de datas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+
+<body>
+    <h1>Registros e Estatísticas de Acesso</h1>
+    <div id="menu">
+        <button onclick="window.location.href='estatistica.html'">Estatísticas de Acesso</button>
+        <button onclick="updateData()">Atualizar Dados</button>
+    </div>
+
+    <div id="registros" class="active">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>ID do Cartão</th>
+                    <th>Nome da Pessoa</th>
+                    <th>Horário</th>
+                    <th>Status de Acesso</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-corpo">
+                <!-- Os registros serão adicionados aqui via JavaScript -->
+            </tbody>
+        </table>
+        <p id="error-message" style="color: red; text-align: center;"></p>
+    </div>
+
+    <div id="estatisticas" class="hidden">
+        <div class="spinner">Carregando...</div>
+        <div class="chart-container" id="chartAcessosContainer" style="display: none;">
+            <canvas id="chartAcessos"></canvas>
+        </div>
+        <div class="chart-container" id="chartStatusContainer" style="display: none;">
+            <canvas id="chartStatus"></canvas>
+        </div>
+        
+    </div>
+
+    <!-- Inclua o arquivo de configuração -->
+    <script src="config.js"></script>
+    <!-- Seu script principal -->
+    <script>
+        function updateData() {
+            const tabelaCorpo = document.getElementById('tabela-corpo');
+            tabelaCorpo.innerHTML = ''; // Limpa a tabela
+
+            fetch(CONFIG.API_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro na resposta da rede');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Dados recebidos:', data); // Verifica os dados recebidos
+
+                    if (!Array.isArray(data) || data.length === 0) {
+                        throw new Error('Dados inválidos ou vazios');
+                    }
+
+                    // Ordena os dados por horário, do mais novo para o mais antigo
+                    data.sort((a, b) => new Date(b.horario) - new Date(a.horario));
+
+                    data.forEach(registro => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+            <td>${registro.id}</td>
+            <td>${registro.id_cartao}</td>
+            <td>${registro.nome_pessoa}</td>
+            <td>${registro.horario}</td>
+            <td>${registro.status_acesso}</td>
+        `;
+                        tabelaCorpo.appendChild(tr);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar os dados:', error);
+                    alert('Erro ao carregar os dados: ' + error.message);
+                });
+        }
+
+
+        //aqui
+        function showSection(sectionId) {
+            document.getElementById('registros').classList.add('hidden');
+            document.getElementById('estatisticas').classList.add('hidden');
+            document.getElementById(sectionId).classList.remove('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Registros de Acesso
+            fetch(CONFIG.API_URL)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data); // Verifica se os dados estão corretos
+
+                    // Ordena os dados por horário, do mais novo para o mais antigo
+                    data.sort((a, b) => new Date(b.horario) - new Date(a.horario));
+
+                    const tabelaCorpo = document.getElementById('tabela-corpo');
+                    data.forEach(registro => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                    <td>${registro.id}</td>
+                    <td>${registro.id_cartao}</td>
+                    <td>${registro.nome_pessoa}</td>
+                    <td>${registro.horario}</td>
+                    <td>${registro.status_acesso}</td>
+                `;
+                        tabelaCorpo.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Erro ao buscar os dados:', error));
+
+            const spinner = document.querySelector('.spinner');
+            const chartAcessosContainer = document.getElementById('chartAcessosContainer');
+            const chartStatusContainer = document.getElementById('chartStatusContainer');
+            const btnAcessos = document.getElementById('btnAcessos');
+            const btnStatus = document.getElementById('btnStatus');
+
+            
+
+            fetch(CONFIG.API_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro na resposta da rede');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Dados recebidos:', data); // Verifica os dados recebidos
+                    spinner.style.display = 'none';
+
+                    if (!Array.isArray(data) || data.length === 0) {
+                        throw new Error('Dados inválidos ou vazios');
+                    }
+
+                    const horarios = data.map(registro => registro.horario);
+                    const statusAcesso = data.map(registro => registro.status_acesso);
+
+                    // Gráfico de Acessos por Horário
+                    const ctxAcessos = document.getElementById('chartAcessos').getContext('2d');
+                    new Chart(ctxAcessos, {
+                        type: 'line',
+                        data: {
+                            labels: horarios,
+                            datasets: [{
+                                label: 'Acessos por Horário',
+                                data: horarios.map(() => 1), // Um acesso por horário
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderWidth: 1,
+                                fill: true,
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                x: {
+                                    type: 'time',
+                                    time: {
+                                        unit: 'hour'
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+
+                    // Contagem de status de acesso
+                    const statusCounts = statusAcesso.reduce((acc, status) => {
+                        acc[status] = (acc[status] || 0) + 1;
+                        return acc;
+                    }, {});
+
+                    // Gráfico de Status de Acesso
+                    const ctxStatus = document.getElementById('chartStatus').getContext('2d');
+                    new Chart(ctxStatus, {
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(statusCounts),
+                            datasets: [{
+                                label: 'Status de Acesso',
+                                data: Object.values(statusCounts),
+                                backgroundColor: [
+                                    'rgba(75, 192, 192, 0.2)',
+                                    'rgba(255, 99, 132, 0.2)',
+                                    'rgba(54, 162, 235, 0.2)',
+                                    'rgba(255, 206, 86, 0.2)',
+                                    'rgba(153, 102, 255, 0.2)',
+                                    'rgba(255, 159, 64, 0.2)'
+                                ],
+                                borderColor: [
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(153, 102, 255, 1)',
+                                    'rgba(255, 159, 64, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    spinner.style.display = 'none';
+                    console.error('Erro ao buscar os dados:', error);
+                    alert('Erro ao carregar os dados: ' + error.message);
+                });
+        });
+    </script>
+</body>
+
+</html>
