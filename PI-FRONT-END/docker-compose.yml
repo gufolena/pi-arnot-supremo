@@ -4,7 +4,7 @@ services:
   nginx:
     build: .
     ports:
-      - "80:80"
+      - "83:80"
     volumes:
       - ./config.js:/usr/share/nginx/html/config.js
       - ./estatistica.html:/usr/share/nginx/html/estatistica.html

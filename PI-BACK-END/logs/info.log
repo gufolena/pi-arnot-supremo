@@ -1,0 +1,2 @@
+2024-06-09 10:41:36,086 INFO Dados recebidos: {'nome_pessoa': 'Desconhecido', 'id_cartao': 281890791180371, 'horario': '2024-06-09 07:41:34', 'status_acesso': 'Desconhecido'}
+2024-06-09 10:41:42,504 INFO Dados recebidos: {'nome_pessoa': 'Pedro', 'id_cartao': 820952838, 'horario': '2024-06-09 07:41:42', 'status_acesso': 'Negado'}

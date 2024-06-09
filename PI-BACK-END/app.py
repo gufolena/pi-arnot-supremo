@@ -5,7 +5,7 @@ import logging
 import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})  # Permite todas as origens
 
 # Create logs directory if it doesn't exist
 if not os.path.exists('logs'):
