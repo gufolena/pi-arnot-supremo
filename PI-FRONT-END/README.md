@@ -41,8 +41,3 @@ Esta página apresenta uma tabela com os registros de acesso.
 # Contribuição
 
 Contribuições são bem-vindas! Sinta-se à vontade para abrir issues ou pull requests para melhorias ou correções.
-
-
-# Licença
-
-Este projeto está licenciado sob a Licença MIT.
